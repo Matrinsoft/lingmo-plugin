@@ -2,6 +2,7 @@
 #include <LingmoPlugin/PluginMetadata.h>
 
 #include <QTest>
+#include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QFile>
 #include <QDir>
