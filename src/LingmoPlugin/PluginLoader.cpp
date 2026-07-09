@@ -1,6 +1,9 @@
 #include "private/PluginLoader_p.h"
 #include <LingmoPlugin/PluginMetadata.h>
 
+#include <QDir>
+#include <QFileInfo>
+
 namespace Lingmo {
 
 PluginLoader::PluginLoader(QObject *parent)

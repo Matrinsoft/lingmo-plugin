@@ -1,4 +1,4 @@
-#include "private/PluginMetadata_p.h"
+#include <LingmoPlugin/PluginMetadata.h>
 
 #include <QFile>
 #include <QJsonDocument>
@@ -8,16 +8,18 @@
 namespace Lingmo {
 
 PluginMetadata::PluginMetadata()
-    : d(std::make_unique<Impl>())
+    : d(new PluginMetadataData)
 {
 }
 
 PluginMetadata::PluginMetadata(const QString &filePath)
-    : d(std::make_unique<Impl>())
+    : d(new PluginMetadataData)
 {
     loadFromFile(filePath);
 }
 
+PluginMetadata::PluginMetadata(const PluginMetadata &other) = default;
+PluginMetadata &PluginMetadata::operator=(const PluginMetadata &other) = default;
 PluginMetadata::~PluginMetadata() = default;
 
 bool PluginMetadata::loadFromFile(const QString &filePath)
@@ -28,7 +30,6 @@ bool PluginMetadata::loadFromFile(const QString &filePath)
 
     const QByteArray content = file.readAll();
     file.close();
-
     return loadFromString(QString::fromUtf8(content));
 }
 
@@ -40,13 +41,11 @@ bool PluginMetadata::loadFromString(const QString &json)
 
     d->data = doc.object().toVariantMap();
 
-    // Validate required fields
     const bool hasRequired = d->data.contains(QStringLiteral("id"))
         && d->data.contains(QStringLiteral("type"))
         && d->data.contains(QStringLiteral("version"))
         && d->data.contains(QStringLiteral("library"));
 
-    // Validate api block
     if (hasRequired) {
         const QVariantMap api = d->data.value(QStringLiteral("api")).toMap();
         if (!api.contains(QStringLiteral("name"))
@@ -61,32 +60,18 @@ bool PluginMetadata::loadFromString(const QString &json)
 }
 
 bool PluginMetadata::isValid() const { return d->valid; }
-
-QString PluginMetadata::id() const
-{
-    return d->data.value(QStringLiteral("id")).toString();
-}
-
-QString PluginMetadata::type() const
-{
-    return d->data.value(QStringLiteral("type")).toString();
-}
-
-QString PluginMetadata::version() const
-{
-    return d->data.value(QStringLiteral("version")).toString();
-}
+QString PluginMetadata::id() const { return d->data.value(QStringLiteral("id")).toString(); }
+QString PluginMetadata::type() const { return d->data.value(QStringLiteral("type")).toString(); }
+QString PluginMetadata::version() const { return d->data.value(QStringLiteral("version")).toString(); }
 
 QString PluginMetadata::apiName() const
 {
-    return d->data.value(QStringLiteral("api")).toMap()
-        .value(QStringLiteral("name")).toString();
+    return d->data.value(QStringLiteral("api")).toMap().value(QStringLiteral("name")).toString();
 }
 
 QString PluginMetadata::apiVersion() const
 {
-    return d->data.value(QStringLiteral("api")).toMap()
-        .value(QStringLiteral("version")).toString();
+    return d->data.value(QStringLiteral("api")).toMap().value(QStringLiteral("version")).toString();
 }
 
 QString PluginMetadata::library() const
@@ -125,19 +110,16 @@ QList<PluginMetadata::Dependency> PluginMetadata::dependencies() const
         d->data.value(QStringLiteral("dependencies")).toList());
     for (const auto &item : arr) {
         const QVariantMap dep = item.toObject().toVariantMap();
-        Dependency d;
-        d.id = dep.value(QStringLiteral("id")).toString();
-        d.version = dep.value(QStringLiteral("version")).toString();
-        if (!d.id.isEmpty())
-            deps.append(d);
+        Dependency depInfo;
+        depInfo.id = dep.value(QStringLiteral("id")).toString();
+        depInfo.version = dep.value(QStringLiteral("version")).toString();
+        if (!depInfo.id.isEmpty())
+            deps.append(depInfo);
     }
     return deps;
 }
 
-QVariantMap PluginMetadata::rawMetadata() const
-{
-    return d->data;
-}
+QVariantMap PluginMetadata::rawMetadata() const { return d->data; }
 
 QString PluginMetadata::factorySymbol() const
 {

@@ -14,7 +14,6 @@ PluginManager::PluginManager(QObject *parent)
     : QObject(parent)
     , d(std::make_unique<PluginManagerPrivate>())
 {
-    // Add default search paths
     const QString envPath = QProcessEnvironment::systemEnvironment()
         .value(QStringLiteral("LINGMO_PLUGINS_PATH"));
     if (!envPath.isEmpty()) {
@@ -67,11 +66,11 @@ void PluginManager::discover()
             if (!metadata.isValid()) continue;
 
             const QString pluginId = metadata.id();
-            if (d->plugins.contains(pluginId)) continue;
+            if (d->plugins.count(pluginId)) continue;
 
             PluginInfo info;
             info.metadata = std::move(metadata);
-            d->plugins.insert(pluginId, std::move(info));
+            d->plugins.emplace(pluginId, std::move(info));
         }
     }
 
@@ -80,17 +79,25 @@ void PluginManager::discover()
 
 QStringList PluginManager::pluginIds() const
 {
-    return d->plugins.keys();
+    QStringList ids;
+    ids.reserve(static_cast<int>(d->plugins.size()));
+    for (const auto &[key, value] : d->plugins) {
+        ids.append(key);
+    }
+    return ids;
 }
 
 PluginMetadata PluginManager::metadata(const QString &pluginId) const
 {
-    return d->plugins.value(pluginId).metadata;
+    auto it = d->plugins.find(pluginId);
+    if (it != d->plugins.end())
+        return it->second.metadata;
+    return {};
 }
 
 bool PluginManager::hasPlugin(const QString &pluginId) const
 {
-    return d->plugins.contains(pluginId);
+    return d->plugins.count(pluginId) > 0;
 }
 
 bool PluginManager::loadPlugin(const QString &pluginId)
@@ -101,85 +108,81 @@ bool PluginManager::loadPlugin(const QString &pluginId)
         return false;
     }
 
-    if (it->loaded) return true;
+    if (it->second.loaded) return true;
 
-    // Check dependencies
-    const auto deps = it->metadata.dependencies();
+    const auto deps = it->second.metadata.dependencies();
     for (const auto &dep : deps) {
         if (!hasPlugin(dep.id)) {
-            const QString msg = QStringLiteral("Missing dependency: %1").arg(dep.id);
-            emit pluginError(pluginId, msg);
+            emit pluginError(pluginId, QStringLiteral("Missing dependency: %1").arg(dep.id));
             return false;
         }
         if (!isLoaded(dep.id)) {
             if (!loadPlugin(dep.id)) {
-                const QString msg = QStringLiteral("Failed to load dependency: %1").arg(dep.id);
-                emit pluginError(pluginId, msg);
+                emit pluginError(pluginId, QStringLiteral("Failed to load dependency: %1").arg(dep.id));
                 return false;
             }
         }
     }
 
-    // Create loader and load
-    it->loader.reset(new PluginLoader);
+    it->second.loader = std::make_unique<PluginLoader>();
 
-    connect(it->loader.get(), &PluginLoader::error,
+    connect(it->second.loader.get(), &PluginLoader::error,
             this, [this, pluginId](const QString &msg) {
                 emit pluginError(pluginId, msg);
             });
 
-    if (!it->loader->load(it->metadata)) {
-        it->loader.reset();
+    if (!it->second.loader->load(it->second.metadata)) {
+        it->second.loader.reset();
         return false;
     }
 
-    it->loaded = true;
+    it->second.loaded = true;
     emit pluginLoaded(pluginId);
     return true;
 }
 
 QObject *PluginManager::plugin(const QString &pluginId) const
 {
-    auto it = d->plugins.constFind(pluginId);
-    if (it == d->plugins.constEnd() || !it->loaded || !it->loader)
+    auto it = d->plugins.find(pluginId);
+    if (it == d->plugins.end() || !it->second.loaded || !it->second.loader)
         return nullptr;
 
-    return it->loader->createInstance();
+    return it->second.loader->createInstance();
 }
 
 bool PluginManager::isLoaded(const QString &pluginId) const
 {
-    auto it = d->plugins.constFind(pluginId);
-    return it != d->plugins.constEnd() && it->loaded;
+    auto it = d->plugins.find(pluginId);
+    return it != d->plugins.end() && it->second.loaded;
 }
 
 void PluginManager::unloadPlugin(const QString &pluginId)
 {
     auto it = d->plugins.find(pluginId);
-    if (it == d->plugins.end() || !it->loaded)
+    if (it == d->plugins.end() || !it->second.loaded)
         return;
 
-    if (it->loader) {
-        it->loader->unload();
-        it->loader.reset();
+    if (it->second.loader) {
+        it->second.loader->unload();
+        it->second.loader.reset();
     }
-    it->loaded = false;
+    it->second.loaded = false;
     emit pluginUnloaded(pluginId);
 }
 
 QStringList PluginManager::pluginsOfType(const QString &type) const
 {
     QStringList result;
-    for (auto it = d->plugins.constBegin(); it != d->plugins.constEnd(); ++it) {
-        if (it->metadata.type() == type)
-            result.append(it.key());
+    for (const auto &[key, value] : d->plugins) {
+        if (value.metadata.type() == type)
+            result.append(key);
     }
     return result;
 }
 
 int PluginManager::pluginCount() const
 {
-    return d->plugins.size();
+    return static_cast<int>(d->plugins.size());
 }
 
 } // namespace Lingmo
