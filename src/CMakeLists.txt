@@ -5,7 +5,6 @@ set(PUBLIC_HEADERS
 )
 
 set(PRIVATE_HEADERS
-    LingmoPlugin/private/PluginMetadata_p.h
     LingmoPlugin/private/PluginLoader_p.h
     LingmoPlugin/private/PluginManager_p.h
 )
