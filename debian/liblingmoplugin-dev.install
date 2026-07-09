@@ -1,0 +1,3 @@
+usr/include/LingmoPlugin/
+usr/lib/*/libLingmoPlugin.so
+usr/lib/*/cmake/LingmoPlugin/

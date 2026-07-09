@@ -1,0 +1,26 @@
+Source: lingmo-plugin
+Section: libs
+Priority: optional
+Maintainer: Lingmo OS Team <team@lingmo.org>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.21),
+               qt6-base-dev (>= 6.5)
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+
+Package: liblingmoplugin1
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Lingmo Desktop - Plugin system (shared library)
+ Lingmo Plugin provides JSON metadata discovery, shared library loading,
+ version checking, and lifecycle management for Lingmo Desktop plugins.
+
+Package: liblingmoplugin-dev
+Architecture: any
+Section: libdevel
+Depends: liblingmoplugin1 (= ${binary:Version}),
+         qt6-base-dev (>= 6.5),
+         ${misc:Depends}
+Description: Lingmo Desktop - Plugin system (development files)
+ This package contains the development headers and CMake integration
+ for Lingmo Plugin.

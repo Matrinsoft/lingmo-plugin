@@ -1,0 +1,14 @@
+#pragma once
+
+#include <QtCore/qglobal.h>
+
+#if defined(LINGMOPLUGIN_LIBRARY)
+#  define LINGMOPLUGIN_EXPORT Q_DECL_EXPORT
+#else
+#  define LINGMOPLUGIN_EXPORT Q_DECL_IMPORT
+#endif
+
+#if defined(LINGMOPLUGIN_STATIC)
+#  undef LINGMOPLUGIN_EXPORT
+#  define LINGMOPLUGIN_EXPORT
+#endif

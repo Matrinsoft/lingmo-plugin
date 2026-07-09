@@ -1,0 +1,14 @@
+{
+    "id": "org.lingmo.test.dependent",
+    "type": "test",
+    "version": "1.0.0",
+    "api": {
+        "name": "org.lingmo.test",
+        "version": "1.0"
+    },
+    "name": { "default": "Dependent Plugin" },
+    "library": "liblingmo_test_dependent.so",
+    "dependencies": [
+        { "id": "org.lingmo.test.plugin", "version": ">=1.0" }
+    ]
+}

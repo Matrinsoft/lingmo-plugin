@@ -1,0 +1,18 @@
+{
+    "id": "org.lingmo.test.plugin",
+    "type": "test",
+    "version": "1.0.0",
+    "api": {
+        "name": "org.lingmo.test",
+        "version": "1.0"
+    },
+    "name": {
+        "default": "Test Plugin",
+        "zh_CN": "测试插件"
+    },
+    "description": "A test plugin for unit tests",
+    "library": "liblingmo_test_plugin.so",
+    "category": "test",
+    "icon": "test-icon",
+    "dependencies": []
+}
